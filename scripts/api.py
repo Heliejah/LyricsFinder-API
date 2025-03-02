@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from .lyrics_fetcher import get_lyrics_from_url_or_title
 
@@ -13,6 +13,10 @@ flask_env = os.environ.get('FLASK_ENV', 'production')
 @app.route('/')
 def hello():
     return {"status": "success", "message": "API is running"}
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204  # Return No Content response for favicon requests
 
 @app.route('/get_lyrics', methods=['GET'])
 def get_lyrics():
@@ -44,6 +48,13 @@ def handle_error(error):
         'status': 'error',
         'message': str(error)
     }), 500
+
+@app.errorhandler(500)
+def internal_error(error):
+    return {
+        "status": "error",
+        "message": "Internal server error occurred"
+    }, 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', 
