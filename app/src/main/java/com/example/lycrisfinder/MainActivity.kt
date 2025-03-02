@@ -25,6 +25,12 @@ data class LyricsResponse(
 interface LyricsApi {
     @GET("get_lyrics")
     suspend fun getLyrics(@Query("query") query: String): LyricsResponse
+    
+    @GET("get_lyrics")
+    suspend fun getLyricsWithArtist(
+        @Query("artist") artist: String,
+        @Query("title") title: String
+    ): LyricsResponse
 }
 
 class MainActivity : AppCompatActivity() {
@@ -60,27 +66,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchLyrics(query: String) {
-        // Show loading state
-        lyricsTextView.text = "Loading..."
-        searchButton.isEnabled = false
-
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val response = api.getLyrics(query)
-                
+                // Try Genius API first
+                val parts = query.split("-")
+                val response = if (parts.size == 2) {
+                    val artist = parts[0].trim()
+                    val title = parts[1].trim()
+                    api.getLyricsWithArtist(artist, title)
+                } else {
+                    // Fallback to basic query
+                    api.getLyrics(query)
+                }
+
                 withContext(Dispatchers.Main) {
-                    when (response.status) {
-                        "success" -> lyricsTextView.text = response.lyrics
-                        "error" -> lyricsTextView.text = "Error: ${response.message}"
-                        else -> lyricsTextView.text = "Unknown error occurred"
+                    when {
+                        response.lyrics != null -> {
+                            lyricsTextView.text = response.lyrics
+                        }
+                        response.message != null -> {
+                            lyricsTextView.text = "Error: ${response.message}"
+                        }
+                        else -> {
+                            lyricsTextView.text = "No lyrics found"
+                        }
                     }
+                    searchButton.isEnabled = true
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     lyricsTextView.text = "Error: ${e.message}"
-                }
-            } finally {
-                withContext(Dispatchers.Main) {
                     searchButton.isEnabled = true
                 }
             }
