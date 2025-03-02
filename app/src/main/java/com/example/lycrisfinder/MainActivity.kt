@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     
     // Initialize Retrofit
     private val api = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:5000/") // Points to localhost on the development machine
+        .baseUrl("https://lyricsfinder-api-uper.onrender.com/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
         .create(LyricsApi::class.java)
